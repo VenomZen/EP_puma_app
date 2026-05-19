@@ -65,9 +65,9 @@ const XP_PER_LEVEL = 200;
 let data = (() => {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved) return { sessions: [], totalXP: 0, activeSkin: 'default', ...saved };
-    return { sessions: [], totalXP: 0, activeSkin: 'default' };
-  } catch { return { sessions: [], totalXP: 0, activeSkin: 'default' }; }
+    if (saved) return { sessions: [], totalXP: 0, activeSkin: 'default', randomOrder: false, ...saved };
+    return { sessions: [], totalXP: 0, activeSkin: 'default', randomOrder: false };
+  } catch { return { sessions: [], totalXP: 0, activeSkin: 'default', randomOrder: false }; }
 })();
 
 function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -328,6 +328,12 @@ function showDashboard() {
 
       <button class="btn-start" id="btn-start">▶&nbsp; START DRILL</button>
 
+      <div class="order-toggle">
+        <span class="ot-label">Question order</span>
+        <button class="ot-btn${!data.randomOrder ? ' active' : ''}" id="btn-seq">Sequential</button>
+        <button class="ot-btn${data.randomOrder ? ' active' : ''}" id="btn-rand">Random</button>
+      </div>
+
       <div class="skins-panel">
         <div class="section-header">Skins — Select PUMA Appearance</div>
         <div class="skins-grid">
@@ -393,6 +399,13 @@ function showDashboard() {
 
   document.getElementById('btn-start').addEventListener('click', startDrill);
 
+  document.getElementById('btn-seq').addEventListener('click', () => {
+    data.randomOrder = false; persist(); showDashboard();
+  });
+  document.getElementById('btn-rand').addEventListener('click', () => {
+    data.randomOrder = true; persist(); showDashboard();
+  });
+
   document.querySelectorAll('.skin-tile.unlocked').forEach(tile => {
     tile.addEventListener('click', () => {
       setActiveSkin(tile.dataset.skin);
@@ -401,21 +414,27 @@ function showDashboard() {
   });
 }
 
-// ─── VIEW: Question ───────────────────────────────────────────
-function showQuestion(idx) {
-  const q = QUESTIONS[idx];
-  const pctFill = (idx / QUESTIONS.length) * 100;
-  let revealed = false;
+// ─── VIEW: Question (pos = position in session.order) ────────
+function showQuestion(pos) {
+  const qIdx    = session.order[pos];
+  const q       = QUESTIONS[qIdx];
+  const pctFill = (pos / session.order.length) * 100;
+  const answered = session.answers[qIdx];
+  const isFirst  = pos === 0;
+  const isLast   = pos === session.order.length - 1;
+  let revealed   = false;
 
   app.innerHTML = `
     <div class="quiz-view fade-in">
 
       <div class="quiz-bar">
+        <button class="qb-back" id="btn-back" ${isFirst ? 'disabled' : ''}>&#8592; Back</button>
         <span class="qb-code">${q.code}</span>
         <div class="progress-track">
           <div class="progress-fill" style="width:${pctFill}%"></div>
         </div>
-        <span class="qb-count">${idx + 1} / ${QUESTIONS.length}</span>
+        <span class="qb-count">${pos + 1} / ${session.order.length}</span>
+        <button class="qb-menu" id="btn-menu" title="Return to main menu">&#x2302; Menu</button>
       </div>
 
       <div class="score-badge">
@@ -428,87 +447,121 @@ function showQuestion(idx) {
         <div class="q-eyebrow">Emergency Procedure</div>
         <h1 class="q-title" id="q-title-text"></h1>
 
-        <div class="steps-form" id="steps-form">
-          ${q.steps.map((_, i) => `
-            <div class="step-row">
-              <div class="step-num">${i + 1}</div>
-              <div class="step-field">
-                <input
-                  type="text"
-                  class="step-input"
-                  id="step-${i}"
-                  placeholder="Enter step ${i + 1}…"
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  data-idx="${i}"
-                />
-                <div class="step-hint" id="hint-${i}"></div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-
-        <div class="action-row" id="action-row">
-          <button class="btn-reveal" id="btn-reveal">Reveal</button>
-          <button class="btn-submit" id="btn-submit">Submit Answer &rarr;</button>
-        </div>
+        ${answered ? `
+          <div class="steps-form">
+            ${q.steps.map((step, i) => {
+              const ok = answered.stepResults[i];
+              return `<div class="step-row">
+                <div class="step-num">${i + 1}</div>
+                <div class="step-field">
+                  <div class="step-answered ${ok ? 'correct' : 'incorrect'}">
+                    ${ok ? '✓' : '✗'}&nbsp;${step}
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="action-row">
+            <button class="btn-reveal" id="btn-retry">&#x21BA;&nbsp; Retry</button>
+            <button class="btn-submit" id="btn-advance">
+              ${isLast ? 'Finish Drill &rarr;' : 'Next EP &rarr;'}
+            </button>
+          </div>
+        ` : `
+          <div class="steps-form" id="steps-form">
+            ${q.steps.map((_, i) => `
+              <div class="step-row">
+                <div class="step-num">${i + 1}</div>
+                <div class="step-field">
+                  <input type="text" class="step-input" id="step-${i}"
+                    placeholder="Enter step ${i + 1}…"
+                    autocomplete="off" autocorrect="off" autocapitalize="off"
+                    spellcheck="false" data-idx="${i}"/>
+                  <div class="step-hint" id="hint-${i}"></div>
+                </div>
+              </div>`).join('')}
+          </div>
+          <div class="action-row" id="action-row">
+            <button class="btn-reveal" id="btn-reveal">Reveal</button>
+            <button class="btn-submit" id="btn-submit">Submit Answer &rarr;</button>
+          </div>
+        `}
       </div>
 
     </div>
   `;
 
-  setTimeout(() => document.getElementById('step-0')?.focus(), 60);
-
-  // Typewriter on question title
+  // Always: typewriter title, back, menu
   const titleEl = document.getElementById('q-title-text');
   if (titleEl) typewriter(titleEl, q.title.toUpperCase(), 22);
 
-  // Scan sweep across the question card
-  const card = document.querySelector('.question-card');
-  if (card) {
-    const sweep = document.createElement('div');
-    sweep.className = 'scan-sweep';
-    card.prepend(sweep);
-    setTimeout(() => sweep.remove(), 750);
+  document.getElementById('btn-back').addEventListener('click', () => {
+    if (!isFirst) showQuestion(pos - 1);
+  });
+  document.getElementById('btn-menu').addEventListener('click', () => {
+    session = null;
+    showDashboard();
+  });
+
+  if (answered) {
+    // Retry: subtract old score, clear answer, re-show fresh
+    document.getElementById('btn-retry').addEventListener('click', () => {
+      session.score -= answered.correct;
+      session.answers[qIdx] = null;
+      showQuestion(pos);
+    });
+    document.getElementById('btn-advance').addEventListener('click', () => {
+      if (isLast) finishDrill();
+      else showQuestion(pos + 1);
+    });
+  } else {
+    // Scan sweep + focus
+    const card = document.querySelector('.question-card');
+    if (card) {
+      const sweep = document.createElement('div');
+      sweep.className = 'scan-sweep';
+      card.prepend(sweep);
+      setTimeout(() => sweep.remove(), 750);
+    }
+    setTimeout(() => document.getElementById('step-0')?.focus(), 60);
+
+    q.steps.forEach((_, i) => {
+      document.getElementById(`step-${i}`).addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const next = document.getElementById(`step-${i + 1}`);
+          if (next) next.focus();
+          else submitQuestion(pos);
+        }
+      });
+    });
+
+    document.getElementById('btn-reveal').addEventListener('click', () => {
+      revealed = !revealed;
+      const btn = document.getElementById('btn-reveal');
+      if (!session.revealUsed.includes(qIdx)) session.revealUsed.push(qIdx);
+      q.steps.forEach((step, i) => {
+        const hint = document.getElementById(`hint-${i}`);
+        if (revealed) {
+          hint.textContent = `→ ${step}`;
+          hint.className = 'step-hint visible reveal';
+          btn.textContent = 'Hide';
+        } else {
+          hint.textContent = '';
+          hint.className = 'step-hint';
+          btn.textContent = 'Reveal';
+        }
+      });
+    });
+
+    document.getElementById('btn-submit').addEventListener('click', () => submitQuestion(pos));
   }
-
-  q.steps.forEach((_, i) => {
-    document.getElementById(`step-${i}`).addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const next = document.getElementById(`step-${i + 1}`);
-        if (next) next.focus();
-        else submitQuestion(idx);
-      }
-    });
-  });
-
-  document.getElementById('btn-reveal').addEventListener('click', () => {
-    revealed = !revealed;
-    const btn = document.getElementById('btn-reveal');
-    if (!session.revealUsed.includes(idx)) session.revealUsed.push(idx);
-    q.steps.forEach((step, i) => {
-      const hint = document.getElementById(`hint-${i}`);
-      if (revealed) {
-        hint.textContent = `→ ${step}`;
-        hint.className = 'step-hint visible reveal';
-        btn.textContent = 'Hide';
-      } else {
-        hint.textContent = '';
-        hint.className = 'step-hint';
-        btn.textContent = 'Reveal';
-      }
-    });
-  });
-
-  document.getElementById('btn-submit').addEventListener('click', () => submitQuestion(idx));
 }
 
 // ─── Submit & score a question ────────────────────────────────
-function submitQuestion(idx) {
-  const q = QUESTIONS[idx];
+function submitQuestion(pos) {
+  const qIdx     = session.order[pos];
+  const q        = QUESTIONS[qIdx];
   const submitBtn = document.getElementById('btn-submit');
   const revealBtn = document.getElementById('btn-reveal');
   if (!submitBtn || submitBtn.disabled) return;
@@ -517,6 +570,7 @@ function submitQuestion(idx) {
   if (revealBtn) revealBtn.disabled = true;
 
   let correct = 0;
+  const stepResults = [];
 
   q.steps.forEach((expected, i) => {
     const input = document.getElementById(`step-${i}`);
@@ -524,6 +578,7 @@ function submitQuestion(idx) {
     if (!input) return;
 
     const ok = check(input.value, expected);
+    stepResults.push(ok);
     if (ok) correct++;
 
     input.readOnly = true;
@@ -548,7 +603,7 @@ function submitQuestion(idx) {
   });
 
   session.score += correct;
-  session.answers.push({ qId: q.id, correct, total: q.steps.length });
+  session.answers[qIdx] = { correct, total: q.steps.length, stepResults };
 
   if (correct === q.steps.length) sfxCorrect();
   else if (correct > 0) sfxPartial();
@@ -565,18 +620,15 @@ function submitQuestion(idx) {
     });
   }
 
+  const isLast     = pos === session.order.length - 1;
+  const allCorrect = correct === q.steps.length;
+  const statusText = allCorrect
+    ? 'ALL CORRECT'
+    : correct > 0 ? `${correct} OF ${q.steps.length} CORRECT` : 'INCORRECT — REVIEW ANSWERS';
+  const nextLabel  = isLast ? 'Finish Drill &rarr;' : 'Next EP &rarr;';
+
   const actionRow = document.getElementById('action-row');
   if (actionRow) {
-    const allCorrect = correct === q.steps.length;
-    const statusText = allCorrect
-      ? 'ALL CORRECT'
-      : correct > 0
-        ? `${correct} OF ${q.steps.length} CORRECT`
-        : 'INCORRECT — REVIEW ANSWERS';
-
-    const isLast    = idx === QUESTIONS.length - 1;
-    const nextLabel = isLast ? 'Finish Drill &rarr;' : 'Next EP &rarr;';
-
     actionRow.innerHTML = `
       <div class="result-banner">
         <div>
@@ -585,13 +637,21 @@ function submitQuestion(idx) {
           </div>
           <div class="rb-status">${statusText}</div>
         </div>
-        <button class="btn-next" id="btn-next">${nextLabel}</button>
+        <div class="result-actions">
+          <button class="btn-reveal" id="btn-retry">&#x21BA;&nbsp; Retry</button>
+          <button class="btn-next" id="btn-next">${nextLabel}</button>
+        </div>
       </div>
     `;
 
+    document.getElementById('btn-retry').addEventListener('click', () => {
+      session.score -= correct;
+      session.answers[qIdx] = null;
+      showQuestion(pos);
+    });
     document.getElementById('btn-next').addEventListener('click', () => {
       if (isLast) finishDrill();
-      else showQuestion(idx + 1);
+      else showQuestion(pos + 1);
     });
   }
 }
@@ -721,7 +781,15 @@ function finishDrill() {
 
 // ─── Start a new drill session ────────────────────────────────
 function startDrill() {
-  session = { score: 0, answers: [], revealUsed: [] };
+  const order = QUESTIONS.map((_, i) => i);
+  if (data.randomOrder) {
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+  }
+  // answers indexed by original question index (null = not yet answered)
+  session = { score: 0, answers: new Array(QUESTIONS.length).fill(null), revealUsed: [], order };
   showQuestion(0);
 }
 

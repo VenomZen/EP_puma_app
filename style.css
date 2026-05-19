@@ -1174,3 +1174,88 @@ html, body {
   65%  { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.1) translateY(-10px); }
 }
+
+/* ─── Quiz bar navigation ─── */
+.qb-back, .qb-menu {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.04em;
+}
+.qb-back:hover:not(:disabled), .qb-menu:hover {
+  background: var(--amber);
+  color: var(--bg);
+}
+.qb-back:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* ─── Answered step display ─── */
+.step-answered {
+  padding: 7px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  margin-bottom: 5px;
+  border: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.step-answered.correct  { border-color: var(--green); color: var(--green); background: rgba(0,200,100,0.06); }
+.step-answered.incorrect { border-color: var(--red);   color: var(--red);   background: rgba(220,50,50,0.07); }
+
+/* ─── Result actions (retry in result banner) ─── */
+.result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+/* ─── Order toggle ─── */
+.order-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.ot-label {
+  font-size: 0.75rem;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+.ot-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 4px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.ot-btn:hover { border-color: var(--amber); color: var(--amber); }
+.ot-btn.active {
+  background: var(--amber);
+  color: var(--bg);
+  border-color: var(--amber);
+  font-weight: 700;
+}
