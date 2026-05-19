@@ -54,7 +54,7 @@ const QUESTIONS = [
       'Command Autoland.',
       'Hot Key to MAN mode and control altitude with % of power.',
       'If control is regained, continue mission.',
-      'If control is ot regained, command Autoland.'
+      'If control is not regained, command Autoland.'
     ]
   },
   {
@@ -72,7 +72,7 @@ const QUESTIONS = [
     steps: [
       'Switch to MAN mode and control altitude with % of power.',
       'If control is regained, continue mission.',
-      'If control is ot regained, command Autoland.'
+      'If control is not regained, command Autoland.'
     ]
   },
   {
