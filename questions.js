@@ -89,7 +89,7 @@ const QUESTIONS = [
     code: 'EP-10',
     title: 'Motor Controller or Li-Ion Aircraft Battery Over Temp',
     steps: [
-      'Reduce & of power as appropriate.',
+      'Reduce % of power as appropriate.',
       'Clear warning message.',
       'If message does not clear, Return to base, if able.',
       'If unable, command Autoland.'
@@ -101,7 +101,7 @@ const QUESTIONS = [
     title: 'Mid-Air Avoidance',
     steps: [
       'Estimate intruding aircraft altitude.',
-      'Climb/Decend as applicable to aviod aircraft.'
+      'Climb/Decend as applicable to avoid aircraft.'
     ]
   },
   {
