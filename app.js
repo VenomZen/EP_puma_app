@@ -127,6 +127,87 @@ function sfxWrong()    { tone(200, 0.32, 'sawtooth', 0.07); }
 function sfxPerfect()  { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.14), i * 85)); }
 function sfxLevelUp()  { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'sine', 0.09), i * 110)); }
 
+// ─── Magic: ambient star field ────────────────────────────────
+function initStarField() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;';
+  document.body.insertBefore(canvas, document.body.firstChild);
+  const ctx = canvas.getContext('2d');
+  let stars;
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({ length: 90 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.1 + 0.2,
+      vx: (Math.random() - 0.5) * 0.06,
+      vy: (Math.random() - 0.5) * 0.06,
+      a: Math.random() * 0.35 + 0.08
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      s.x = (s.x + s.vx + canvas.width)  % canvas.width;
+      s.y = (s.y + s.vy + canvas.height) % canvas.height;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,210,230,${s.a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  draw();
+  window.addEventListener('resize', resize);
+}
+
+// ─── Magic: particle burst ────────────────────────────────────
+function spawnParticles(cx, cy, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    const p     = document.createElement('div');
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.8;
+    const dist  = 28 + Math.random() * 52;
+    const size  = 2 + Math.random() * 3;
+    p.className = 'particle';
+    p.style.cssText = `left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${color};--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 950);
+  }
+}
+
+// ─── Magic: full-screen level-up flash ───────────────────────
+function showLevelUpOverlay(level) {
+  const el = document.createElement('div');
+  el.className = 'levelup-overlay';
+  el.innerHTML = `<div class="levelup-text">LEVEL&nbsp;${level}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+// ─── Magic: typewriter text reveal ───────────────────────────
+function typewriter(el, text, speed = 22) {
+  el.textContent = '';
+  let i = 0;
+  const tick = () => { if (i < text.length) { el.textContent += text[i++]; setTimeout(tick, speed); } };
+  tick();
+}
+
+// ─── Magic: animated number counter ──────────────────────────
+function animateCounter(el, target, duration = 900) {
+  const t0 = performance.now();
+  const step = now => {
+    const p = Math.min((now - t0) / duration, 1);
+    el.textContent = Math.round((1 - Math.pow(1 - p, 3)) * target);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 // ─── SVG: accurate Puma AE II top-down plan view ─────────────
 // Fuselage nose at left (x≈14), tail at right (x≈194).
 // Wings mid-fuselage, conventional tail, chin sensor pod, pusher prop.
@@ -207,7 +288,7 @@ function showDashboard() {
   app.innerHTML = `
     <div class="fade-in">
 
-      <div class="dash-header">
+      <div class="dash-header hud-brackets">
         <div class="drone-wrap" style="filter: drop-shadow(0 0 10px ${activeSkinDef.glow})">
           ${droneSvg(activeSkin)}
         </div>
@@ -343,9 +424,9 @@ function showQuestion(idx) {
         <span class="sb-max">/ ${TOTAL_STEPS}</span>
       </div>
 
-      <div class="question-card">
+      <div class="question-card hud-brackets">
         <div class="q-eyebrow">Emergency Procedure</div>
-        <h1 class="q-title">${q.title.toUpperCase()}</h1>
+        <h1 class="q-title" id="q-title-text"></h1>
 
         <div class="steps-form" id="steps-form">
           ${q.steps.map((_, i) => `
@@ -379,6 +460,19 @@ function showQuestion(idx) {
   `;
 
   setTimeout(() => document.getElementById('step-0')?.focus(), 60);
+
+  // Typewriter on question title
+  const titleEl = document.getElementById('q-title-text');
+  if (titleEl) typewriter(titleEl, q.title.toUpperCase(), 22);
+
+  // Scan sweep across the question card
+  const card = document.querySelector('.question-card');
+  if (card) {
+    const sweep = document.createElement('div');
+    sweep.className = 'scan-sweep';
+    card.prepend(sweep);
+    setTimeout(() => sweep.remove(), 750);
+  }
 
   q.steps.forEach((_, i) => {
     document.getElementById(`step-${i}`).addEventListener('keydown', e => {
@@ -441,6 +535,15 @@ function submitQuestion(idx) {
     } else if (ok && hint) {
       hint.textContent = '';
       hint.className = 'step-hint';
+    }
+
+    // Particle burst + glitch feedback
+    const rect = input.getBoundingClientRect();
+    spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2,
+      ok ? '#22bb64' : '#d43030', ok ? 10 : 7);
+    if (!ok) {
+      input.classList.add('glitch');
+      setTimeout(() => input.classList.remove('glitch'), 450);
     }
   });
 
@@ -525,13 +628,16 @@ function finishDrill() {
   const xpPct = Math.round((xpCur / xpMax) * 100);
 
   if (pct === 100) setTimeout(sfxPerfect, 100);
-  if (leveledUp)   setTimeout(sfxLevelUp, pct === 100 ? 700 : 200);
+  if (leveledUp) {
+    setTimeout(sfxLevelUp, pct === 100 ? 700 : 200);
+    setTimeout(() => showLevelUpOverlay(newLevel), 350);
+  }
 
   app.innerHTML = `
     <div class="results-view fade-in">
 
       <div class="rv-label">Drill Complete</div>
-      <div class="rv-score">${score}</div>
+      <div class="rv-score" id="rv-score-num">0</div>
       <div class="rv-max">out of ${TOTAL_STEPS} steps</div>
       <div class="rv-grade" style="border-color:${gradeColor}; color:${gradeColor};">${grade}</div>
       <div class="rv-pct">${pct}% accuracy</div>
@@ -594,6 +700,21 @@ function finishDrill() {
     if (bar) bar.style.width = `${newLevel >= 40 ? 100 : xpPct}%`;
   }, 80);
 
+  // Score count-up
+  const rvScoreEl = document.getElementById('rv-score-num');
+  if (rvScoreEl) setTimeout(() => animateCounter(rvScoreEl, score, 900), 180);
+
+  // Perfect score confetti burst
+  if (pct === 100) {
+    setTimeout(() => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 3;
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => spawnParticles(cx, cy, '#eca830', 18), i * 160);
+      }
+    }, 600);
+  }
+
   document.getElementById('btn-home').addEventListener('click', showDashboard);
   document.getElementById('btn-restart').addEventListener('click', startDrill);
 }
@@ -605,4 +726,5 @@ function startDrill() {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────
+initStarField();
 showDashboard();

@@ -111,6 +111,7 @@ html, body {
 .drone-wrap svg {
   width: clamp(180px, 50vw, 280px);
   height: auto;
+  animation: droneFloat 5s ease-in-out infinite;
 }
 
 .skin-drone svg {
@@ -402,6 +403,8 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 26px 22px 22px;
+  position: relative;
+  overflow: hidden;
 }
 
 .q-eyebrow {
@@ -1052,4 +1055,122 @@ html, body {
   font-size: 10px;
   color: var(--text-dim);
   letter-spacing: 0.06em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAGIC LAYER — ambient, particle, and event effects
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── Drone float ────────────────────────────────────────── */
+@keyframes droneFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+
+/* ─── HUD bracket corners ────────────────────────────────── */
+.hud-brackets { position: relative; }
+
+.hud-brackets::before,
+.hud-brackets::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--amber-dim);
+  border-style: solid;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 300ms;
+}
+.hud-brackets::before { top: 6px;  left: 6px;  border-width: 2px 0 0 2px; }
+.hud-brackets::after  { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+.hud-brackets:hover::before,
+.hud-brackets:hover::after { opacity: 0.9; }
+
+/* ─── Scan sweep ─────────────────────────────────────────── */
+.scan-sweep {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%, var(--amber-dim) 20%,
+    var(--amber-hi) 50%, var(--amber-dim) 80%, transparent 100%);
+  animation: scanSweep 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes scanSweep {
+  0%   { top: -2px; opacity: 0.9; }
+  75%  { opacity: 0.5; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ─── Particle burst ─────────────────────────────────────── */
+.particle {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  animation: particleFly 0.85s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes particleFly {
+  0%   { opacity: 1;   transform: translate(-50%, -50%) translate(0, 0)       scale(1); }
+  100% { opacity: 0;   transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) scale(0.2); }
+}
+
+/* ─── Glitch shake on wrong answer ──────────────────────── */
+@keyframes glitch {
+  0%   { transform: translateX(0); }
+  18%  { transform: translateX(-5px); }
+  36%  { transform: translateX(5px); }
+  54%  { transform: translateX(-4px); }
+  72%  { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+.step-input.glitch {
+  animation: glitch 0.38s ease both;
+}
+
+/* ─── Level-up fullscreen overlay ───────────────────────── */
+.levelup-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  pointer-events: none;
+  animation: levelUpBg 1.6s ease forwards;
+}
+
+@keyframes levelUpBg {
+  0%   { background: rgba(200,130,14,0);    backdrop-filter: blur(0px); }
+  20%  { background: rgba(200,130,14,0.10); backdrop-filter: blur(2px); }
+  75%  { background: rgba(200,130,14,0.08); backdrop-filter: blur(2px); }
+  100% { background: rgba(200,130,14,0);    backdrop-filter: blur(0px); }
+}
+
+.levelup-text {
+  font-family: var(--display);
+  font-size: clamp(36px, 9vw, 72px);
+  font-weight: 900;
+  color: var(--amber-hi);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 30px var(--amber-glow),
+    0 0 60px var(--amber-glow),
+    0 0 90px rgba(200,130,14,0.15);
+  animation: levelUpText 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes levelUpText {
+  0%   { opacity: 0; transform: scale(0.4) translateY(20px); }
+  25%  { opacity: 1; transform: scale(1.06) translateY(0); }
+  65%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1) translateY(-10px); }
 }
