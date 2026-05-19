@@ -738,32 +738,26 @@ function submitQuestion(pos) {
     stepResults.push(ok);
     if (ok) correct++;
 
-    input.readOnly = true;
-    input.classList.add(ok ? 'correct' : 'incorrect');
+    const rect = input.getBoundingClientRect();
+    spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2,
+      ok ? '#22bb64' : '#d43030', ok ? 10 : 7);
 
-    if (!ok) {
-      // Replace input display with char-diff overlay
+    if (ok) {
+      input.readOnly = true;
+      input.classList.add('correct');
+      if (hint) { hint.textContent = ''; hint.className = 'step-hint'; }
+    } else {
+      // Replace the input with diff-highlighted div (same visual footprint)
       const diffDiv = document.createElement('div');
       diffDiv.className = 'diff-display';
       diffDiv.innerHTML = diffHighlight(userVal, expected);
-      input.insertAdjacentElement('afterend', diffDiv);
-
+      input.replaceWith(diffDiv);
       if (hint) {
         hint.textContent = `✓ ${expected}`;
         hint.className = 'step-hint visible answer';
       }
-    } else if (hint) {
-      hint.textContent = '';
-      hint.className = 'step-hint';
-    }
-
-    // Particle burst + glitch feedback
-    const rect = input.getBoundingClientRect();
-    spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2,
-      ok ? '#22bb64' : '#d43030', ok ? 10 : 7);
-    if (!ok) {
-      input.classList.add('glitch');
-      setTimeout(() => input.classList.remove('glitch'), 450);
+      diffDiv.classList.add('glitch');
+      setTimeout(() => diffDiv.classList.remove('glitch'), 450);
     }
   });
 
