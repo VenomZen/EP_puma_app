@@ -108,6 +108,21 @@ html, body {
   transition: filter 400ms ease;
 }
 
+.drone-wrap svg {
+  width: clamp(180px, 50vw, 280px);
+  height: auto;
+}
+
+.skin-drone svg {
+  width: 100%;
+  height: auto;
+}
+
+.unlock-drone svg {
+  width: 160px;
+  height: auto;
+}
+
 .dash-system {
   font-size: 10px;
   letter-spacing: 0.35em;

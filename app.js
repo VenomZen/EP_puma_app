@@ -127,51 +127,68 @@ function sfxWrong()    { tone(200, 0.32, 'sawtooth', 0.07); }
 function sfxPerfect()  { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.14), i * 85)); }
 function sfxLevelUp()  { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'sine', 0.09), i * 110)); }
 
-// ─── SVG drone silhouette (skin-aware) ───────────────────────
+// ─── SVG: accurate Puma AE II top-down plan view ─────────────
+// Fuselage nose at left (x≈14), tail at right (x≈194).
+// Wings mid-fuselage, conventional tail, chin sensor pod, pusher prop.
 let _svgId = 0;
 function droneSvg(skinId) {
   const uid = ++_svgId;
   const skin = getSkinDef(skinId || getActiveSkin());
   const c = skin.primary;
 
-  // Anime livery: multi-color GTA-style paint scheme
-  if (skin.anime) {
-    return `<svg width="110" height="48" viewBox="0 0 110 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="8" y="20" width="80" height="8" rx="4" fill="#ff2d78"/>
-      <rect x="8" y="22.5" width="80" height="2" rx="1" fill="#00e5ff" opacity="0.92"/>
-      <polygon points="22,20 88,20 74,11 36,11" fill="#00e5ff" opacity="0.82"/>
-      <polygon points="34,18.5 76,18.5 68,14 42,14" fill="#ff2d78" opacity="0.55"/>
-      <polygon points="82,24 97,38 89,24" fill="#ffffff" opacity="0.90"/>
-      <polygon points="82,24 97,10 89,24" fill="#ffffff" opacity="0.90"/>
-      <ellipse cx="7" cy="24" rx="5" ry="4" fill="#ff2d78" opacity="0.96"/>
-      <circle cx="90" cy="24" r="4" fill="none" stroke="#00e5ff" stroke-width="2.2" opacity="0.92"/>
-      <rect x="40" y="28" width="14" height="5" rx="2.5" fill="#ffffff" opacity="0.70"/>
-      <polygon points="55,12 56.6,14.4 59.5,14.8 57.4,16.8 57.9,19.8 55,18.3 52.1,19.8 52.6,16.8 50.5,14.8 53.4,14.4" fill="#ffffff" opacity="0.90"/>
-    </svg>`;
-  }
-
-  let defs = '', overlay = '';
+  // Shared shape definitions for tiger stripe overlay
+  let defs = '', stripeOverlay = '';
   if (skin.stripes) {
     defs = `<defs>
       <pattern id="str${uid}" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(50)">
         <rect width="2.5" height="5" fill="rgba(0,0,0,0.40)"/>
       </pattern>
     </defs>`;
-    overlay = `
-      <rect x="8" y="20" width="80" height="8" rx="4" fill="url(#str${uid})"/>
-      <polygon points="22,20 88,20 74,11 36,11" fill="url(#str${uid})" opacity="0.88"/>`;
+    stripeOverlay = `
+      <path d="M 14,55 L 22,51 L 158,51 L 178,52.5 L 194,55 L 178,57.5 L 158,59 L 22,59 Z" fill="url(#str${uid})"/>
+      <polygon points="80,51 103,51 97,7 76,7" fill="url(#str${uid})" opacity="0.88"/>
+      <polygon points="80,59 103,59 97,103 76,103" fill="url(#str${uid})" opacity="0.88"/>`;
   }
 
-  return `<svg width="110" height="48" viewBox="0 0 110 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  // Anime livery: hot-pink body, cyan wings, white tail, neon glow
+  if (skin.anime) {
+    return `<svg width="205" height="110" viewBox="0 0 205 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M 14,55 L 22,51 L 158,51 L 178,52.5 L 194,55 L 178,57.5 L 158,59 L 22,59 Z" fill="#ff2d78"/>
+      <rect x="14" y="53.5" width="180" height="3" rx="1.5" fill="#00e5ff" opacity="0.90"/>
+      <polygon points="80,51 103,51 97,7 76,7" fill="#00e5ff" opacity="0.82"/>
+      <polygon points="84,51 99,51 94,22 79,22" fill="#ff2d78" opacity="0.48"/>
+      <polygon points="80,59 103,59 97,103 76,103" fill="#00e5ff" opacity="0.82"/>
+      <polygon points="84,59 99,59 94,88 79,88" fill="#ff2d78" opacity="0.48"/>
+      <polygon points="163,51 176,51 170,33 159,33" fill="#ffffff" opacity="0.90"/>
+      <polygon points="163,59 176,59 170,77 159,77" fill="#ffffff" opacity="0.90"/>
+      <circle cx="196" cy="55" r="7.5" fill="none" stroke="#00e5ff" stroke-width="2.2" opacity="0.92"/>
+      <line x1="196" y1="47.5" x2="196" y2="62.5" stroke="#00e5ff" stroke-width="1.8" opacity="0.70"/>
+      <line x1="188.5" y1="55" x2="203.5" y2="55" stroke="#00e5ff" stroke-width="1.8" opacity="0.70"/>
+      <ellipse cx="26" cy="62" rx="7" ry="4.5" fill="#ffffff" opacity="0.72"/>
+      <polygon points="87,23 88.2,26.4 91.8,26.5 88.9,28.6 89.9,32 87,30 84.1,32 85.1,28.6 82.2,26.5 85.8,26.4" fill="#ffffff" opacity="0.90"/>
+    </svg>`;
+  }
+
+  // Standard single-colour render (default, normal, gold, platinum, tiger)
+  return `<svg width="205" height="110" viewBox="0 0 205 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     ${defs}
-    <rect x="8" y="20" width="80" height="8" rx="4" fill="${c}"/>
-    <polygon points="22,20 88,20 74,11 36,11" fill="${c}" opacity="0.65"/>
-    <polygon points="82,24 97,38 89,24" fill="${c}" opacity="0.80"/>
-    <polygon points="82,24 97,10 89,24" fill="${c}" opacity="0.80"/>
-    <ellipse cx="7" cy="24" rx="5" ry="4" fill="${c}" opacity="0.90"/>
-    <circle cx="90" cy="24" r="4" fill="none" stroke="${c}" stroke-width="1.8" opacity="0.70"/>
-    <rect x="40" y="28" width="14" height="5" rx="2.5" fill="${c}" opacity="0.50"/>
-    ${overlay}
+    <!-- Fuselage: tapered nose left, tail boom narrowing right -->
+    <path d="M 14,55 L 22,51 L 158,51 L 178,52.5 L 194,55 L 178,57.5 L 158,59 L 22,59 Z" fill="${c}"/>
+    <!-- Main wings: high aspect ratio, mid-fuselage -->
+    <polygon points="80,51 103,51 97,7 76,7"     fill="${c}" opacity="0.78"/>
+    <polygon points="80,59 103,59 97,103 76,103"  fill="${c}" opacity="0.78"/>
+    <!-- Horizontal stabilizers (conventional tail) -->
+    <polygon points="163,51 176,51 170,33 159,33" fill="${c}" opacity="0.85"/>
+    <polygon points="163,59 176,59 170,77 159,77" fill="${c}" opacity="0.85"/>
+    <!-- V-fin centerline (top-down: thin line along tail boom) -->
+    <line x1="163" y1="55" x2="194" y2="55" stroke="${c}" stroke-width="1.5" opacity="0.40"/>
+    <!-- Pusher propeller ring + blade cross -->
+    <circle cx="196" cy="55" r="7.5" fill="none" stroke="${c}" stroke-width="2"   opacity="0.75"/>
+    <line x1="196" y1="47.5" x2="196" y2="62.5"   stroke="${c}" stroke-width="1.8" opacity="0.55"/>
+    <line x1="188.5" y1="55" x2="203.5" y2="55"    stroke="${c}" stroke-width="1.8" opacity="0.55"/>
+    <!-- Chin-mounted EO/IR sensor pod (protrudes below nose) -->
+    <ellipse cx="26" cy="62" rx="7" ry="4.5" fill="${c}" opacity="0.68"/>
+    ${stripeOverlay}
   </svg>`;
 }
 
