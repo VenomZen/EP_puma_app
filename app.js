@@ -301,6 +301,41 @@ function showYouSuck() {
   setTimeout(() => el.remove(), 3100);
 }
 
+// ─── Char-level diff highlight (LCS) ─────────────────────────
+function diffHighlight(userInput, expected) {
+  const inp = userInput.trim().replace(/\s+/g, ' ');
+  const exp = expected.trim().replace(/\s+/g, ' ');
+  if (!inp) return '<span class="diff-wrong">(empty)</span>';
+
+  const m = inp.length, n = exp.length;
+  const dp = Array.from({length: m + 1}, () => new Int16Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = inp[i-1] === exp[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+
+  const matched = new Uint8Array(m);
+  let i = m, j = n;
+  while (i > 0 && j > 0) {
+    if (inp[i-1] === exp[j-1]) { matched[i-1] = 1; i--; j--; }
+    else if (dp[i-1][j] >= dp[i][j-1]) i--;
+    else j--;
+  }
+
+  let html = '', state = null;
+  for (let k = 0; k < m; k++) {
+    const s = matched[k] ? 'g' : 'r';
+    if (s !== state) {
+      if (state) html += '</span>';
+      html += `<span class="diff-${s === 'g' ? 'correct' : 'wrong'}">`;
+      state = s;
+    }
+    const c = inp[k];
+    html += c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c;
+  }
+  if (state) html += '</span>';
+  return html;
+}
+
 // ─── Magic: typewriter text reveal ───────────────────────────
 function typewriter(el, text, speed = 22) {
   el.textContent = '';
@@ -563,12 +598,18 @@ function showQuestion(pos) {
           <div class="steps-form">
             ${q.steps.map((step, i) => {
               const ok = answered.stepResults[i];
+              const typed = answered.userInputs ? answered.userInputs[i] : null;
               return `<div class="step-row">
                 <div class="step-num">${i + 1}</div>
                 <div class="step-field">
-                  <div class="step-answered ${ok ? 'correct' : 'incorrect'}">
-                    ${ok ? '✓' : '✗'}&nbsp;${step}
-                  </div>
+                  ${ok ? `
+                    <div class="step-answered correct">✓&nbsp;${step}</div>
+                  ` : `
+                    <div class="step-answered incorrect">
+                      ✗&nbsp;${typed != null ? diffHighlight(typed, step) : step}
+                    </div>
+                    <div class="step-hint visible answer">✓ ${step}</div>
+                  `}
                 </div>
               </div>`;
             }).join('')}
@@ -683,23 +724,35 @@ function submitQuestion(pos) {
 
   let correct = 0;
   const stepResults = [];
+  const userInputs  = [];
 
   q.steps.forEach((expected, i) => {
     const input = document.getElementById(`step-${i}`);
     const hint  = document.getElementById(`hint-${i}`);
     if (!input) return;
 
-    const ok = check(input.value, expected);
+    const userVal = input.value;
+    userInputs.push(userVal);
+
+    const ok = check(userVal, expected);
     stepResults.push(ok);
     if (ok) correct++;
 
     input.readOnly = true;
     input.classList.add(ok ? 'correct' : 'incorrect');
 
-    if (!ok && hint) {
-      hint.textContent = `✓ ${expected}`;
-      hint.className = 'step-hint visible answer';
-    } else if (ok && hint) {
+    if (!ok) {
+      // Replace input display with char-diff overlay
+      const diffDiv = document.createElement('div');
+      diffDiv.className = 'diff-display';
+      diffDiv.innerHTML = diffHighlight(userVal, expected);
+      input.insertAdjacentElement('afterend', diffDiv);
+
+      if (hint) {
+        hint.textContent = `✓ ${expected}`;
+        hint.className = 'step-hint visible answer';
+      }
+    } else if (hint) {
       hint.textContent = '';
       hint.className = 'step-hint';
     }
@@ -715,7 +768,7 @@ function submitQuestion(pos) {
   });
 
   session.score += correct;
-  session.answers[qIdx] = { correct, total: q.steps.length, stepResults };
+  session.answers[qIdx] = { correct, total: q.steps.length, stepResults, userInputs };
 
   if (correct === q.steps.length) { sfxCorrect(); showCalendarGirl(); }
   else if (correct > 0) sfxPartial();
