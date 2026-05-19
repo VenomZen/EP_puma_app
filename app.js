@@ -189,6 +189,118 @@ function showLevelUpOverlay(level) {
   setTimeout(() => el.remove(), 1600);
 }
 
+// ─── Calendar girl SVG (pin-up holding Puma AE II) ──────────
+function calendarGirlSvg() {
+  return `<svg viewBox="0 0 280 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:260px;display:block;margin:0 auto">
+    <text x="18" y="42" font-size="20">⭐</text>
+    <text x="238" y="42" font-size="20">⭐</text>
+    <text x="8" y="190" font-size="12" fill="#ffd700">✦</text>
+    <text x="260" y="190" font-size="12" fill="#ffd700">✦</text>
+    <text x="125" y="18" font-size="16" fill="#ffd700">✦</text>
+    <text x="145" y="18" font-size="16" fill="#ffd700">✦</text>
+    <!-- Puma AE II held overhead -->
+    <path d="M88,65 L96,61 L180,61 L193,62.5 L200,65 L193,67.5 L180,69 L96,69 Z" fill="#5a7a9a"/>
+    <polygon points="120,61 142,61 136,37 115,37" fill="#445577"/>
+    <polygon points="120,69 142,69 136,93 115,93" fill="#445577"/>
+    <polygon points="168,61 182,61 178,49 165,49" fill="#445577"/>
+    <polygon points="168,69 182,69 178,81 165,81" fill="#445577"/>
+    <ellipse cx="202" cy="65" rx="3" ry="9" fill="#8899aa" opacity="0.7"/>
+    <ellipse cx="93" cy="69" rx="6" ry="4" fill="#445577"/>
+    <!-- Left arm up -->
+    <path d="M103,188 Q87,162 91,116 Q93,104 101,103 Q110,103 110,118 Q108,146 118,175" fill="#f4a56a" stroke="#e8944a" stroke-width="0.5"/>
+    <!-- Right arm up -->
+    <path d="M177,188 Q193,162 189,116 Q187,104 179,103 Q170,103 170,118 Q172,146 162,175" fill="#f4a56a" stroke="#e8944a" stroke-width="0.5"/>
+    <!-- Hair back -->
+    <path d="M116,148 Q110,128 116,112 Q130,97 140,95 Q150,97 164,112 Q170,128 164,148" fill="#8B2020"/>
+    <path d="M116,148 Q107,162 107,180 Q108,194 116,197 Q109,178 116,148Z" fill="#8B2020"/>
+    <path d="M164,148 Q173,162 173,180 Q172,194 164,197 Q171,178 164,148Z" fill="#8B2020"/>
+    <!-- Head -->
+    <ellipse cx="140" cy="152" rx="26" ry="28" fill="#f4a56a"/>
+    <!-- Hair front -->
+    <path d="M116,148 Q118,123 140,120 Q162,123 164,148 Q154,133 140,131 Q126,133 116,148Z" fill="#8B2020"/>
+    <!-- Eyes -->
+    <ellipse cx="131" cy="150" rx="4.5" ry="5.5" fill="#1a0a05"/>
+    <ellipse cx="149" cy="150" rx="4.5" ry="5.5" fill="#1a0a05"/>
+    <ellipse cx="130" cy="148" rx="1.8" ry="2.2" fill="white" opacity="0.35"/>
+    <ellipse cx="148" cy="148" rx="1.8" ry="2.2" fill="white" opacity="0.35"/>
+    <path d="M127,145 Q129,141 131,140 Q133,141 135,145" stroke="#1a0a05" stroke-width="1.5" fill="none"/>
+    <path d="M145,145 Q147,141 149,140 Q151,141 153,145" stroke="#1a0a05" stroke-width="1.5" fill="none"/>
+    <!-- Nose -->
+    <path d="M138,158 Q140,163 142,158" stroke="#c0753a" stroke-width="1.5" fill="none"/>
+    <!-- Lips -->
+    <path d="M132,168 Q136,174 140,171 Q144,174 148,168" fill="#e84a5f"/>
+    <path d="M132,168 Q140,164 148,168 Q140,167 132,168Z" fill="#c0392b"/>
+    <!-- Earrings -->
+    <circle cx="114" cy="157" r="3" fill="#ffd700"/>
+    <circle cx="166" cy="157" r="3" fill="#ffd700"/>
+    <!-- Neck -->
+    <rect x="134" y="178" width="12" height="14" fill="#f4a56a"/>
+    <!-- Uniform body -->
+    <path d="M114,192 Q127,183 140,182 Q153,183 166,192 L169,264 Q153,274 140,276 Q127,274 111,264Z" fill="#1a3a5a"/>
+    <!-- V neckline -->
+    <path d="M128,185 Q140,212 152,185" fill="#f4a56a"/>
+    <!-- Rank stripes -->
+    <rect x="115" y="207" width="50" height="3" rx="1" fill="#c9a227" opacity="0.85"/>
+    <rect x="115" y="213" width="50" height="3" rx="1" fill="#c9a227" opacity="0.85"/>
+    <!-- Belt -->
+    <rect x="113" y="241" width="54" height="7" rx="3" fill="#0d2235"/>
+    <rect x="135" y="238" width="10" height="13" rx="2" fill="#c9a227"/>
+    <!-- Legs -->
+    <path d="M126,264 L119,330 L134,330 L140,292 L146,330 L161,330 L154,264Z" fill="#f4a56a"/>
+    <!-- Boots -->
+    <path d="M115,326 L115,337 Q119,343 134,343 L134,330 L119,330Z" fill="#1a0a05"/>
+    <path d="M146,326 L146,337 Q150,343 165,343 L165,330 L150,330Z" fill="#1a0a05"/>
+    <rect x="115" y="339" width="6" height="5" fill="#0d0005"/>
+    <rect x="153" y="339" width="6" height="5" fill="#0d0005"/>
+  </svg>`;
+}
+
+// ─── Overlay: Calendar Girl (all correct) ────────────────────
+function showCalendarGirl() {
+  const months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
+                  'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  const month = months[new Date().getMonth()];
+  const day   = new Date().getDate();
+
+  const el = document.createElement('div');
+  el.className = 'celeb-overlay';
+  el.innerHTML = `
+    <div class="celeb-card cal-card">
+      <div class="cal-header-strip">
+        <span class="cal-month-tab">${month}</span>
+        <span class="cal-day">${day}</span>
+      </div>
+      <div class="cal-art">${calendarGirlSvg()}</div>
+      <div class="celeb-title">MISSION ACCOMPLISHED</div>
+      <div class="celeb-sub">Textbook execution, pilot ✦</div>
+      <div class="celeb-tap">tap to dismiss</div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  el.addEventListener('click', () => el.remove());
+  setTimeout(() => el.classList.add('celeb-fade-out'), 3400);
+  setTimeout(() => el.remove(), 3900);
+}
+
+// ─── Overlay: You Suck (all wrong) ───────────────────────────
+function showYouSuck() {
+  const el = document.createElement('div');
+  el.className = 'celeb-overlay yousuck-overlay';
+  el.innerHTML = `
+    <div class="celeb-card yousuck-card">
+      <div class="ys-emoji">🖕</div>
+      <div class="ys-title">YOU SUCK</div>
+      <div class="ys-poop">💩</div>
+      <div class="ys-sub">Hit the books, recruit.</div>
+      <div class="celeb-tap">tap to dismiss</div>
+    </div>
+  `;
+  document.body.appendChild(el);
+  el.addEventListener('click', () => el.remove());
+  setTimeout(() => el.classList.add('celeb-fade-out'), 2600);
+  setTimeout(() => el.remove(), 3100);
+}
+
 // ─── Magic: typewriter text reveal ───────────────────────────
 function typewriter(el, text, speed = 22) {
   el.textContent = '';
@@ -605,9 +717,9 @@ function submitQuestion(pos) {
   session.score += correct;
   session.answers[qIdx] = { correct, total: q.steps.length, stepResults };
 
-  if (correct === q.steps.length) sfxCorrect();
+  if (correct === q.steps.length) { sfxCorrect(); showCalendarGirl(); }
   else if (correct > 0) sfxPartial();
-  else sfxWrong();
+  else { sfxWrong(); showYouSuck(); }
 
   const liveScoreEl = document.getElementById('live-score');
   if (liveScoreEl) {
