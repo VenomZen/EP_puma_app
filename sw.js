@@ -1,4 +1,4 @@
-const CACHE = 'puma-ep-v1';
+const CACHE = 'puma-ep-v2';
 const ASSETS = [
   './', './index.html', './style.css', './app.js', './questions.js',
   './icon-192.png', './icon-512.png', './icon-apple.png'
