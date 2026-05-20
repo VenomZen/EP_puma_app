@@ -53,24 +53,24 @@ The app should use localhost to host the app. It should be possible to play with
 - Command Autoland.
 - Hot Key to MAN mode and control altitude with % of power.
 - If control is regained, continue mission.
-- If control is ot regained, command Autoland.
+- If control is not regained, command Autoland.
 7.
 - Push Menu Select right three times to enter Diagnostics screen 6.
 8.
 - Switch to MAN mode and control altitude with % of power.
 - If control is regained, continue mission.
-- If control is ot regained, command Autoland.
+- If control is not regained, command Autoland.
 9.
 - Return to base, if able.
 - If unable, command Autoland.
 10.
-- Reduce & of power as appropriate.
+- Reduce % of power as appropriate.
 - Clear warning message.
 - If message does not clear, Return to base, if able.
 - If unable, command Autoland.
 11.
 - Estimate intruding aircraft altitude.
-- Climb/Decend as applicable to aviod aircraft.
+- Climb/Decend as applicable to avoid aircraft.
 12.
 - Select ALT Mode.
 - Set CMD alt to a safe altitude.

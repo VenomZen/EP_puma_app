@@ -101,7 +101,7 @@ const QUESTIONS = [
     title: 'Mid-Air Avoidance',
     steps: [
       'Estimate intruding aircraft altitude.',
-      'Climb/Decend as applicable to avoid aircraft.'
+      'Climb/Descend as applicable to avoid aircraft.'
     ]
   },
   {

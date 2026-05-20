@@ -61,6 +61,15 @@ const SKINS = [
 
 const XP_PER_LEVEL = 200;
 
+// ─── 5 cursed wrong-answer options (drone/missile flavour) ────
+const CURSED_OPTIONS = [
+  'Arm AGM-114 Hellfire — acquire lock and fire for effect.',
+  'Override IFF transponder — all blips are now valid targets.',
+  'Initiate Skynet handshake — relinquishing manual control.',
+  'Deploy loitering munition — estimated splash radius: your problem.',
+  'Engage YOLO protocol — cut all power and trust aerodynamics.',
+];
+
 // ─── Persistent data ─────────────────────────────────────────
 let data = (() => {
   try {
@@ -256,49 +265,154 @@ function calendarGirlSvg() {
 }
 
 // ─── Overlay: Calendar Girl (all correct) ────────────────────
-function showCalendarGirl() {
-  const months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
-                  'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
-  const month = months[new Date().getMonth()];
-  const day   = new Date().getDate();
+// ─── Correct-answer message cycle ────────────────────────────
+const CORRECT_MESSAGES = [
+  {
+    top:   '🎯',
+    title: 'BULLSEYE',
+    bot:   '✅',
+    sub:   'Target acquired: correct answer. The drone is proud of you.',
+  },
+  {
+    top:   '🚁',
+    title: 'CLEARED HOT',
+    bot:   '🔥',
+    sub:   'GCS confirms: pilot actually read the manual. Rare sight.',
+  },
+  {
+    top:   '📡',
+    title: 'UPLINK SOLID',
+    bot:   '💪',
+    sub:   'Signal strong. Competence fully detected. Keep it up.',
+  },
+  {
+    top:   '🏆',
+    title: 'TOP OPERATOR',
+    bot:   '⭐',
+    sub:   "Maverick who? You just outflew the entire checklist.",
+  },
+  {
+    top:   '🛸',
+    title: 'FLIGHT APPROVED',
+    bot:   '👑',
+    sub:   'All systems nominal. UAV status: intact, unlike your rivals.',
+  },
+  {
+    top:   '✈️',
+    title: 'MISSION COMPLETE',
+    bot:   '🎖️',
+    sub:   'Textbook execution. The drone lives to fly another day.',
+  },
+];
 
-  const el = document.createElement('div');
-  el.className = 'celeb-overlay';
+let _correctOrder = [];
+let _correctIdx   = 0;
+
+function nextCorrectMsg() {
+  if (_correctIdx >= _correctOrder.length) {
+    _correctOrder = CORRECT_MESSAGES.map((_, i) => i);
+    for (let i = _correctOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [_correctOrder[i], _correctOrder[j]] = [_correctOrder[j], _correctOrder[i]];
+    }
+    _correctIdx = 0;
+  }
+  return CORRECT_MESSAGES[_correctOrder[_correctIdx++]];
+}
+
+// ─── Overlay: Correct answer ──────────────────────────────────
+function showCalendarGirl() {
+  const msg = nextCorrectMsg();
+  const el  = document.createElement('div');
+  el.className = 'celeb-overlay correct-overlay';
   el.innerHTML = `
-    <div class="celeb-card cal-card">
-      <div class="cal-header-strip">
-        <span class="cal-month-tab">${month}</span>
-        <span class="cal-day">${day}</span>
-      </div>
-      <div class="cal-art">${calendarGirlSvg()}</div>
-      <div class="celeb-title">MISSION ACCOMPLISHED</div>
-      <div class="celeb-sub">Textbook execution, pilot ✦</div>
+    <div class="celeb-card correct-card">
+      <div class="cg-emoji">${msg.top}</div>
+      <div class="cg-title">${msg.title}</div>
+      <div class="cg-bot">${msg.bot}</div>
+      <div class="cg-sub">${msg.sub}</div>
       <div class="celeb-tap">tap to dismiss</div>
     </div>
   `;
   document.body.appendChild(el);
   el.addEventListener('click', () => el.remove());
-  setTimeout(() => el.classList.add('celeb-fade-out'), 3400);
-  setTimeout(() => el.remove(), 3900);
+  setTimeout(() => el.classList.add('celeb-fade-out'), 2800);
+  setTimeout(() => el.remove(), 3300);
 }
 
-// ─── Overlay: You Suck (all wrong) ───────────────────────────
+// ─── Wrong-answer message cycle ──────────────────────────────
+const WRONG_MESSAGES = [
+  {
+    top:   '🛸',
+    title: 'DRONE DOWN',
+    bot:   '💥',
+    sub:   'Crash report filed. Cause: operator applied confidence without competence.',
+  },
+  {
+    top:   '⚖️',
+    title: 'COURT MARTIAL',
+    bot:   '🎖️',
+    sub:   'Charges: reckless endangerment of a perfectly good $200k UAV.',
+  },
+  {
+    top:   '🚨',
+    title: 'ABORT MISSION',
+    bot:   '🏃',
+    sub:   'GCS operator has been replaced by a more qualified intern.',
+  },
+  {
+    top:   '🐦',
+    title: 'BIRD STRIKE',
+    bot:   '😤',
+    sub:   'The bird memorised the EP checklist. You did not. The bird wins.',
+  },
+  {
+    top:   '📡',
+    title: 'LINK LOST',
+    bot:   '🌊',
+    sub:   "Last known position: somewhere between 'studied' and 'didn't'.",
+  },
+  {
+    top:   '☢️',
+    title: 'SELF DESTRUCT',
+    bot:   '🔥',
+    sub:   'Initiating career-ending sequence. Too late to abort.',
+  },
+];
+
+let _wrongOrder = [];
+let _wrongIdx   = 0;
+
+function nextWrongMsg() {
+  if (_wrongIdx >= _wrongOrder.length) {
+    _wrongOrder = WRONG_MESSAGES.map((_, i) => i);
+    for (let i = _wrongOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [_wrongOrder[i], _wrongOrder[j]] = [_wrongOrder[j], _wrongOrder[i]];
+    }
+    _wrongIdx = 0;
+  }
+  return WRONG_MESSAGES[_wrongOrder[_wrongIdx++]];
+}
+
+// ─── Overlay: Wrong answer ────────────────────────────────────
 function showYouSuck() {
-  const el = document.createElement('div');
+  const msg = nextWrongMsg();
+  const el  = document.createElement('div');
   el.className = 'celeb-overlay yousuck-overlay';
   el.innerHTML = `
     <div class="celeb-card yousuck-card">
-      <div class="ys-emoji">🖕</div>
-      <div class="ys-title">YOU SUCK</div>
-      <div class="ys-poop">💩</div>
-      <div class="ys-sub">Hit the books, recruit.</div>
+      <div class="ys-emoji">${msg.top}</div>
+      <div class="ys-title">${msg.title}</div>
+      <div class="ys-poop">${msg.bot}</div>
+      <div class="ys-sub">${msg.sub}</div>
       <div class="celeb-tap">tap to dismiss</div>
     </div>
   `;
   document.body.appendChild(el);
   el.addEventListener('click', () => el.remove());
-  setTimeout(() => el.classList.add('celeb-fade-out'), 2600);
-  setTimeout(() => el.remove(), 3100);
+  setTimeout(() => el.classList.add('celeb-fade-out'), 2800);
+  setTimeout(() => el.remove(), 3300);
 }
 
 // ─── Char-level diff highlight (LCS) ─────────────────────────
@@ -420,6 +534,309 @@ function droneSvg(skinId) {
   </svg>`;
 }
 
+// ─── MC helper: generate [correct + 2 wrong] options ─────────
+function generateMCOptions(correctStep, qIdx) {
+  // Real steps from all other EPs (deduplicated, not equal to correct)
+  const seen = new Set([correctStep]);
+  const realPool = [];
+  QUESTIONS.forEach((q, qi) => {
+    if (qi === qIdx) return;
+    q.steps.forEach(s => {
+      if (!seen.has(s)) { seen.add(s); realPool.push(s); }
+    });
+  });
+
+  // Shuffle pool
+  for (let i = realPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [realPool[i], realPool[j]] = [realPool[j], realPool[i]];
+  }
+
+  const wrongs = [];
+
+  // ~35% chance: inject one cursed option
+  if (Math.random() < 0.35) {
+    const pick = CURSED_OPTIONS[Math.floor(Math.random() * CURSED_OPTIONS.length)];
+    wrongs.push(pick);
+  }
+
+  // Fill remaining slots from real pool
+  for (const step of realPool) {
+    if (wrongs.length >= 2) break;
+    wrongs.push(step);
+  }
+
+  // Fallback: pad with remaining cursed options if pool was exhausted
+  for (let ci = 0; wrongs.length < 2; ci++) {
+    wrongs.push(CURSED_OPTIONS[ci % CURSED_OPTIONS.length]);
+  }
+
+  const options = [correctStep, ...wrongs];
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+
+  return { options, correctIdx: options.indexOf(correctStep) };
+}
+
+// ─── VIEW: Multiple Choice ────────────────────────────────────
+function showMultipleChoice() {
+  const order = QUESTIONS.map((_, i) => i);
+  if (data.randomOrder) {
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+  }
+
+  let qPos = 0;
+
+  function renderQuestion() {
+    const qIdx   = order[qPos];
+    const q      = QUESTIONS[qIdx];
+    const isFirst = qPos === 0;
+    const isLast  = qPos === order.length - 1;
+    const pctFill = (qPos / order.length) * 100;
+
+    const stepData = q.steps.map(step => generateMCOptions(step, qIdx));
+    const selected = new Array(q.steps.length).fill(-1);
+    let submitted  = false;
+
+    function allAnswered() { return selected.every(s => s !== -1); }
+
+    app.innerHTML = `
+      <div class="mc-view fade-in">
+
+        <div class="quiz-bar">
+          <button class="qb-back" id="mc-back" ${isFirst ? 'disabled' : ''}>&#8592; Back</button>
+          <span class="qb-code">${q.code}</span>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${pctFill}%"></div>
+          </div>
+          <span class="qb-count">${qPos + 1} / ${order.length}</span>
+          <button class="qb-menu" id="mc-menu">&#x2302; Menu</button>
+        </div>
+
+        <div class="question-card hud-brackets">
+          <div class="q-eyebrow">Multiple Choice</div>
+          <h1 class="q-title" id="mc-title"></h1>
+
+          <div class="mc-steps">
+            ${q.steps.map((_, si) => {
+              const { options } = stepData[si];
+              return `
+                <div class="mc-step-block">
+                  <div class="mc-step-label">Step ${si + 1} of ${q.steps.length}</div>
+                  <div class="mc-opts" data-si="${si}">
+                    ${options.map((opt, oi) => `
+                      <button class="mc-option" data-si="${si}" data-oi="${oi}">
+                        <span class="mc-letter">${String.fromCharCode(65 + oi)}</span>
+                        <span class="mc-opt-text">${opt}</span>
+                      </button>`).join('')}
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+
+          <div class="action-row" id="mc-action-row">
+            <button class="btn-submit" id="mc-submit" disabled>Submit Answer &rarr;</button>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    typewriter(document.getElementById('mc-title'), q.title.toUpperCase(), 22);
+
+    const card = document.querySelector('.question-card');
+    if (card) {
+      const sweep = document.createElement('div');
+      sweep.className = 'scan-sweep';
+      card.prepend(sweep);
+      setTimeout(() => sweep.remove(), 750);
+    }
+
+    document.getElementById('mc-back').addEventListener('click', () => {
+      if (!isFirst) { qPos--; renderQuestion(); }
+    });
+    document.getElementById('mc-menu').addEventListener('click', showDashboard);
+
+    document.querySelectorAll('.mc-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (submitted) return;
+        const si = +btn.dataset.si;
+        const oi = +btn.dataset.oi;
+        selected[si] = oi;
+        document.querySelectorAll(`.mc-option[data-si="${si}"]`).forEach((b, i) => {
+          b.classList.toggle('selected', i === oi);
+        });
+        document.getElementById('mc-submit').disabled = !allAnswered();
+      });
+    });
+
+    document.getElementById('mc-submit').addEventListener('click', () => {
+      if (submitted || !allAnswered()) return;
+      submitted = true;
+
+      let correct = 0;
+      q.steps.forEach((_, si) => {
+        const { correctIdx } = stepData[si];
+        const sel = selected[si];
+        const ok  = sel === correctIdx;
+        if (ok) correct++;
+
+        const selBtn = document.querySelector(`.mc-option[data-si="${si}"][data-oi="${sel}"]`);
+        if (selBtn) {
+          const r = selBtn.getBoundingClientRect();
+          spawnParticles(r.left + r.width / 2, r.top + r.height / 2,
+            ok ? '#22bb64' : '#d43030', ok ? 10 : 7);
+        }
+
+        document.querySelectorAll(`.mc-option[data-si="${si}"]`).forEach((b, oi) => {
+          b.disabled = true;
+          if (oi === correctIdx)         b.classList.add('reveal-correct');
+          else if (oi === sel && !ok)    b.classList.add('incorrect');
+          else                           b.classList.add('dimmed');
+        });
+      });
+
+      const allCorrect = correct === q.steps.length;
+      const statusText = allCorrect
+        ? 'ALL CORRECT'
+        : correct > 0 ? `${correct} OF ${q.steps.length} CORRECT` : 'INCORRECT — REVIEW ANSWERS';
+
+      if (allCorrect) { sfxCorrect(); showCalendarGirl(); }
+      else if (correct > 0) sfxPartial();
+      else { sfxWrong(); showYouSuck(); }
+
+      document.getElementById('mc-action-row').innerHTML = `
+        <div class="result-banner">
+          <div>
+            <div class="rb-gained" style="color:${allCorrect ? 'var(--green)' : correct > 0 ? 'var(--amber-hi)' : 'var(--red)'}">
+              ${correct}&nbsp;/&nbsp;${q.steps.length}
+            </div>
+            <div class="rb-status">${statusText}</div>
+          </div>
+          <div class="result-actions">
+            <button class="btn-reveal" id="mc-retry">&#x21BA;&nbsp; Retry</button>
+            <button class="btn-next" id="mc-next">${isLast ? 'Finish &rarr;' : 'Next EP &rarr;'}</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('mc-retry').addEventListener('click', renderQuestion);
+      document.getElementById('mc-next').addEventListener('click', () => {
+        if (isLast) showDashboard();
+        else { qPos++; renderQuestion(); }
+      });
+    });
+  }
+
+  renderQuestion();
+}
+
+// ─── VIEW: Flashcards ────────────────────────────────────────
+function showFlashcards() {
+  const order = QUESTIONS.map((_, i) => i);
+  if (data.randomOrder) {
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+  }
+
+  let cardIdx = 0;
+  let flipped  = false;
+
+  function renderCard() {
+    flipped = false;
+    const q      = QUESTIONS[order[cardIdx]];
+    const pctFill = (cardIdx / order.length) * 100;
+
+    app.innerHTML = `
+      <div class="flashcard-view fade-in">
+
+        <div class="quiz-bar">
+          <button class="qb-menu" id="fc-menu">&#x2302; Menu</button>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${pctFill}%"></div>
+          </div>
+          <span class="qb-count">${cardIdx + 1} / ${order.length}</span>
+        </div>
+
+        <div class="fc-card-wrap" id="fc-wrap">
+          <div class="fc-card" id="fc-card">
+
+            <div class="fc-front">
+              <div class="fc-eyebrow">Emergency Procedure &middot; ${q.code}</div>
+              <div class="fc-title">${q.title.toUpperCase()}</div>
+              <div class="fc-flip-hint">&#x25BD; tap to reveal steps</div>
+            </div>
+
+            <div class="fc-back">
+              <div class="fc-steps-label">Procedure Steps &mdash; ${q.steps.length} step${q.steps.length > 1 ? 's' : ''}</div>
+              <div class="fc-step-list">
+                ${q.steps.map((step, i) => `
+                  <div class="fc-step">
+                    <div class="fc-step-num">${i + 1}</div>
+                    <div class="fc-step-text">${step}</div>
+                  </div>`).join('')}
+              </div>
+              <div class="fc-flip-back-hint">&#x25B3; tap to flip back</div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="fc-nav">
+          <button class="btn-fc-nav" id="fc-prev" ${cardIdx === 0 ? 'disabled' : ''}>&larr; Prev</button>
+          <span class="fc-counter">${cardIdx + 1} / ${order.length}</span>
+          <button class="btn-fc-nav" id="fc-next">${cardIdx < order.length - 1 ? 'Next &rarr;' : 'Done &#x2713;'}</button>
+        </div>
+
+      </div>
+    `;
+
+    document.getElementById('fc-menu').addEventListener('click', () => {
+      document.removeEventListener('keydown', onKey);
+      showDashboard();
+    });
+
+    document.getElementById('fc-wrap').addEventListener('click', () => {
+      flipped = !flipped;
+      document.getElementById('fc-card').classList.toggle('flipped', flipped);
+    });
+
+    document.getElementById('fc-prev').addEventListener('click', e => {
+      e.stopPropagation();
+      if (cardIdx > 0) { cardIdx--; renderCard(); }
+    });
+
+    document.getElementById('fc-next').addEventListener('click', e => {
+      e.stopPropagation();
+      if (cardIdx < order.length - 1) { cardIdx++; renderCard(); }
+      else { document.removeEventListener('keydown', onKey); showDashboard(); }
+    });
+  }
+
+  function onKey(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (e.key === 'ArrowRight' && cardIdx < order.length - 1) { cardIdx++; renderCard(); }
+      if (e.key === 'ArrowLeft'  && cardIdx > 0)                { cardIdx--; renderCard(); }
+    }
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      flipped = !flipped;
+      document.getElementById('fc-card')?.classList.toggle('flipped', flipped);
+    }
+  }
+
+  document.addEventListener('keydown', onKey);
+  renderCard();
+}
+
 // ─── VIEW: Dashboard ──────────────────────────────────────────
 function showDashboard() {
   const best   = getBest();
@@ -479,6 +896,9 @@ function showDashboard() {
         <span class="ot-label">Question order</span>
         <button class="ot-btn${!data.randomOrder ? ' active' : ''}" id="btn-seq">Sequential</button>
         <button class="ot-btn${data.randomOrder ? ' active' : ''}" id="btn-rand">Random</button>
+        <span class="ot-sep"></span>
+        <button class="ot-btn" id="btn-flashcards">Flashcards</button>
+        <button class="ot-btn" id="btn-mc">Multiple Choice</button>
       </div>
 
       <div class="skins-panel">
@@ -552,6 +972,8 @@ function showDashboard() {
   document.getElementById('btn-rand').addEventListener('click', () => {
     data.randomOrder = true; persist(); showDashboard();
   });
+  document.getElementById('btn-flashcards').addEventListener('click', showFlashcards);
+  document.getElementById('btn-mc').addEventListener('click', showMultipleChoice);
 
   document.querySelectorAll('.skin-tile.unlocked').forEach(tile => {
     tile.addEventListener('click', () => {
