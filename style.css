@@ -1007,6 +1007,13 @@ html, body {
   text-transform: uppercase;
 }
 
+.xp-note {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
 /* ─── Skin Unlock Notice ─────────────────────────────────── */
 .unlock-notice {
   display: flex;

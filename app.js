@@ -580,6 +580,105 @@ function generateMCOptions(correctStep, qIdx) {
   return { options, correctIdx: options.indexOf(correctStep) };
 }
 
+// ─── VIEW: MC Results ────────────────────────────────────────
+function finishMC(score) {
+  const pct = Math.round((score / TOTAL_STEPS) * 100);
+
+  let grade, gradeColor;
+  if (pct === 100)    { grade = 'PERFECT — MISSION READY'; gradeColor = 'var(--green)'; }
+  else if (pct >= 90) { grade = 'EXCELLENT';               gradeColor = 'var(--green)'; }
+  else if (pct >= 75) { grade = 'GOOD';                    gradeColor = 'var(--amber-hi)'; }
+  else if (pct >= 60) { grade = 'MARGINAL';                gradeColor = 'var(--amber)'; }
+  else                { grade = 'DRILL AGAIN';             gradeColor = 'var(--red)'; }
+
+  const xpGained = Math.round(calcSessionXP(score) * 0.5);
+  const oldLevel  = getLevel();
+
+  data.totalXP = (data.totalXP || 0) + xpGained;
+  persist();
+
+  const newLevel  = getLevel();
+  const leveledUp = newLevel > oldLevel;
+  const newSkins  = SKINS.filter(s => s.unlockLevel > oldLevel && s.unlockLevel <= newLevel);
+  const { current: xpCur, max: xpMax } = getXPProgress();
+  const xpPct = Math.round((xpCur / xpMax) * 100);
+
+  if (pct === 100) setTimeout(sfxPerfect, 100);
+  if (leveledUp) {
+    setTimeout(sfxLevelUp, pct === 100 ? 700 : 200);
+    setTimeout(() => showLevelUpOverlay(newLevel), 350);
+  }
+
+  app.innerHTML = `
+    <div class="results-view fade-in">
+
+      <div class="rv-label">Multiple Choice Complete</div>
+      <div class="rv-score" id="rv-score-num">0</div>
+      <div class="rv-max">out of ${TOTAL_STEPS} steps</div>
+      <div class="rv-grade" style="border-color:${gradeColor}; color:${gradeColor};">${grade}</div>
+      <div class="rv-pct">${pct}% accuracy</div>
+
+      <div class="xp-award ${leveledUp ? 'leveled-up' : ''}">
+        <span class="xp-plus">+${xpGained} XP</span>
+        <span class="xp-note">50% rate &mdash; Multiple Choice mode</span>
+        ${leveledUp
+          ? `<span class="xp-levelup">LEVEL UP &mdash; ${newLevel}</span>`
+          : `<span class="xp-level">Level ${newLevel}</span>`}
+        ${newLevel < 40 ? `
+          <div class="xp-bar-wrap">
+            <div class="xp-bar-fill" id="xp-bar" style="width:0%"></div>
+          </div>
+          <span class="xp-progress">${xpCur}&nbsp;/&nbsp;${xpMax} XP</span>
+        ` : `<span class="xp-maxlevel">MAX LEVEL REACHED</span>`}
+      </div>
+
+      ${newSkins.length ? `
+        <div class="unlock-notice">
+          ${newSkins.map(s => `
+            <div class="unlock-item">
+              <div class="unlock-drone" style="filter: drop-shadow(0 0 8px ${s.glow})">
+                ${droneSvg(s.id)}
+              </div>
+              <div class="unlock-text">
+                <div class="unlock-title">Skin Unlocked</div>
+                <div class="unlock-name" style="color:${s.primary}">${s.name}</div>
+                <div class="unlock-hint">Equip it from the dashboard</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      <div class="final-buttons">
+        <button class="btn-home" id="mc-home">&larr; Dashboard</button>
+        <button class="btn-restart" id="mc-restart">Play Again</button>
+      </div>
+
+    </div>
+  `;
+
+  setTimeout(() => {
+    const bar = document.getElementById('xp-bar');
+    if (bar) bar.style.width = `${newLevel >= 40 ? 100 : xpPct}%`;
+  }, 80);
+
+  const rvScoreEl = document.getElementById('rv-score-num');
+  if (rvScoreEl) setTimeout(() => animateCounter(rvScoreEl, score, 900), 180);
+
+  if (pct === 100) {
+    setTimeout(() => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 3;
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => spawnParticles(cx, cy, '#eca830', 18), i * 160);
+      }
+    }, 600);
+  }
+
+  document.getElementById('mc-home').addEventListener('click', showDashboard);
+  document.getElementById('mc-restart').addEventListener('click', showMultipleChoice);
+}
+
 // ─── VIEW: Multiple Choice ────────────────────────────────────
 function showMultipleChoice() {
   const order = QUESTIONS.map((_, i) => i);
@@ -591,6 +690,8 @@ function showMultipleChoice() {
   }
 
   let qPos = 0;
+  // Per-EP scores (null = unanswered); allows retry to undo without double-counting
+  const mcEPScores = new Array(QUESTIONS.length).fill(null);
 
   function renderQuestion() {
     const qIdx   = order[qPos];
@@ -686,6 +787,7 @@ function showMultipleChoice() {
         const ok  = sel === correctIdx;
         if (ok) correct++;
 
+
         const selBtn = document.querySelector(`.mc-option[data-si="${si}"][data-oi="${sel}"]`);
         if (selBtn) {
           const r = selBtn.getBoundingClientRect();
@@ -700,6 +802,9 @@ function showMultipleChoice() {
           else                           b.classList.add('dimmed');
         });
       });
+
+      // Record this EP's score; overwrite any previous attempt
+      mcEPScores[qIdx] = correct;
 
       const allCorrect = correct === q.steps.length;
       const statusText = allCorrect
@@ -725,10 +830,15 @@ function showMultipleChoice() {
         </div>
       `;
 
-      document.getElementById('mc-retry').addEventListener('click', renderQuestion);
+      document.getElementById('mc-retry').addEventListener('click', () => {
+        mcEPScores[qIdx] = null; // undo this EP's score so retry can re-earn it
+        renderQuestion();
+      });
       document.getElementById('mc-next').addEventListener('click', () => {
-        if (isLast) showDashboard();
-        else { qPos++; renderQuestion(); }
+        if (isLast) {
+          const total = mcEPScores.reduce((s, v) => s + (v ?? 0), 0);
+          finishMC(total);
+        } else { qPos++; renderQuestion(); }
       });
     });
   }
