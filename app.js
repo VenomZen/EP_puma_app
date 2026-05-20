@@ -61,7 +61,7 @@ const SKINS = [
 
 const XP_PER_LEVEL = 200;
 
-// ─── 5 cursed wrong-answer options (drone/missile flavour) ────
+// ─── Cursed wrong-answer options (drone/missile flavour) ─────
 const CURSED_OPTIONS = [
   'Arm AGM-114 Hellfire — acquire lock and fire for effect.',
   'Override IFF transponder — all blips are now valid targets.',
@@ -69,6 +69,77 @@ const CURSED_OPTIONS = [
   'Deploy loitering munition — estimated splash radius: your problem.',
   'Engage YOLO protocol — cut all power and trust aerodynamics.',
 ];
+
+// ─── Plausible-sounding fake steps (domain-accurate distractors)
+const PLAUSIBLE_DISTRACTORS = [
+  'Verify GPS lock before resuming navigation.',
+  'Transmit position report on primary frequency.',
+  'Activate backup GPS receiver.',
+  'Select HOVER mode and assess situation.',
+  'Set data link to secondary frequency.',
+  'Switch antenna to omni pattern.',
+  'Press and hold ABORT button for 3 seconds.',
+  'Reduce throttle to minimum and monitor descent.',
+  'Set autopilot to HOLD mode.',
+  'Confirm GCS uplink signal strength.',
+  'Set airspeed to minimum safe value.',
+  'Acknowledge fault and monitor all systems.',
+  'Initiate controlled descent to pattern altitude.',
+  'Set payload to safe mode.',
+  'Confirm aircraft heading and re-establish link.',
+  'Toggle to backup communication channel.',
+  'Reset avionics and await system reboot.',
+  'Broadcast MAYDAY on 121.5 MHz.',
+  'Increase altitude to clear obstacle zone.',
+  'Verify flight control surfaces before proceeding.',
+];
+
+// ─── Word-swap pairs for near-miss distractors ────────────────
+// Each entry: [searchString, [replacement, replacement, ...]]
+const WORD_SWAPS = [
+  ['ALT Mode',                     ['MAN Mode',            'GPS Mode',            'HOLD Mode']],
+  ['Switch to MAN mode',           ['Switch to ALT mode',  'Switch to GPS mode',  'Switch to HOLD mode']],
+  ['Hot Key to MAN mode',          ['Hot Key to ALT mode', 'Hot Key to GPS mode', 'Hot Key to HOLD mode']],
+  ['MAN mode',                     ['ALT mode',            'GPS mode',            'HOLD mode']],
+  ['safe altitude',                ['cruise altitude',     'minimum altitude',    'pattern altitude']],
+  ['CMD alt',                      ['autopilot altitude',  'target altitude',     'hold altitude']],
+  ['toward GCS',                   ['away from GCS',       'toward home',         'to heading 000']],
+  ['Return to base',               ['Continue mission',    'Hold position',       'Proceed to alternate']],
+  ['command Autoland',             ['command manual land', 'initiate GPS approach','select forced landing']],
+  ['Command Autoland',             ['Command manual land', 'Initiate GPS approach','Select forced landing']],
+  ['Home location',                ['launch point',        'alternate site',      'designated LZ']],
+  ['right three times',            ['left three times',    'right twice',         'right four times']],
+  ['screen 6',                     ['screen 3',            'screen 4',            'screen 5']],
+  ['Reduce % of power',            ['Increase % of power', 'Maintain % of power', 'Monitor % of power']],
+  ['Clear warning message',        ['Acknowledge warning message', 'Dismiss warning message', 'Log warning message']],
+  ['Estimate intruding',           ['Report intruding',    'Broadcast intruding', 'Track intruding']],
+  ['intruding aircraft altitude',  ['own aircraft altitude','terrain clearance',   'collision altitude']],
+  ['Climb/Descend',                ['Turn left/right',     'Accelerate/Decelerate','Hold altitude/speed']],
+  ['avoid aircraft',               ['identify aircraft',   'follow aircraft',     'report aircraft']],
+  ['reconnect Patch antenna',      ['inspect Patch antenna','replace Patch antenna','bypass Patch antenna']],
+  ['RF unit',                      ['GPS unit',            'data link unit',      'avionics module']],
+  ['regained, continue mission',   ['regained, return to base','lost, abort mission','stable, confirm position']],
+  ['not regained, command Autoland',['regained, continue mission','not regained, return to base','stable, monitor systems']],
+  ['If unable',                    ['If able',             'If directed',         'If necessary']],
+  ['suitable landing area',        ['designated landing zone','emergency airstrip', 'nearest safe field']],
+  ['If message does not clear',    ['If message is acknowledged','If message repeats','If alert escalates']],
+  ['control altitude with % of power',['maintain altitude with autopilot','monitor altitude and power','set altitude using GPS hold']],
+  ['If control is not regained',   ['If control is regained','If systems are nominal','If link is restored']],
+];
+
+// ─── Create a word-swapped near-miss of a step ───────────────
+function makeSwappedDistractor(step) {
+  // Shuffle so different swaps fire on repeated calls for same step
+  const shuffled = [...WORD_SWAPS].sort(() => Math.random() - 0.5);
+  for (const [search, replacements] of shuffled) {
+    if (step.includes(search)) {
+      const rep = replacements[Math.floor(Math.random() * replacements.length)];
+      const result = step.replace(search, rep);
+      if (result !== step) return result;
+    }
+  }
+  return null;
+}
 
 // ─── Persistent data ─────────────────────────────────────────
 let data = (() => {
@@ -536,37 +607,38 @@ function droneSvg(skinId) {
 
 // ─── MC helper: generate [correct + 2 wrong] options ─────────
 function generateMCOptions(correctStep, qIdx) {
-  // Real steps from all other EPs (deduplicated, not equal to correct)
-  const seen = new Set([correctStep]);
+  const wrongs = [];
+
+  // Wrong #1 — word-swapped near-miss (most similar to correct)
+  const swapped = makeSwappedDistractor(correctStep);
+  if (swapped) wrongs.push(swapped);
+
+  // Build fallback pool: shuffled plausibles + shuffled real EP steps
+  const plausibles = [...PLAUSIBLE_DISTRACTORS].sort(() => Math.random() - 0.5);
+  const seen = new Set([correctStep, ...wrongs]);
   const realPool = [];
   QUESTIONS.forEach((q, qi) => {
     if (qi === qIdx) return;
-    q.steps.forEach(s => {
-      if (!seen.has(s)) { seen.add(s); realPool.push(s); }
-    });
+    q.steps.forEach(s => { if (!seen.has(s)) { seen.add(s); realPool.push(s); } });
   });
-
-  // Shuffle pool
   for (let i = realPool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [realPool[i], realPool[j]] = [realPool[j], realPool[i]];
   }
 
-  const wrongs = [];
-
-  // ~35% chance: inject one cursed option
-  if (Math.random() < 0.35) {
-    const pick = CURSED_OPTIONS[Math.floor(Math.random() * CURSED_OPTIONS.length)];
-    wrongs.push(pick);
-  }
-
-  // Fill remaining slots from real pool
-  for (const step of realPool) {
+  // Fill remaining wrong slots from plausibles first, then real steps
+  for (const opt of [...plausibles, ...realPool]) {
     if (wrongs.length >= 2) break;
-    wrongs.push(step);
+    if (!wrongs.includes(opt) && opt !== correctStep) wrongs.push(opt);
   }
 
-  // Fallback: pad with remaining cursed options if pool was exhausted
+  // ~10% chance: replace one wrong with a cursed option for humour
+  if (Math.random() < 0.10) {
+    const ci = Math.floor(Math.random() * CURSED_OPTIONS.length);
+    wrongs[Math.floor(Math.random() * wrongs.length)] = CURSED_OPTIONS[ci];
+  }
+
+  // Pad with cursed as last-resort fallback (pool exhausted edge case)
   for (let ci = 0; wrongs.length < 2; ci++) {
     wrongs.push(CURSED_OPTIONS[ci % CURSED_OPTIONS.length]);
   }
